@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AC Rental Calculator - KeyVendors</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  .kv-calc{font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px 16px;background:#fff;color:#090005}
+  .kv-calc h2{font-size:24px;font-weight:700;text-align:center;margin-bottom:8px;color:#090005}
+
+  /* Progress Bar */
+  .kv-progress{display:flex;align-items:center;gap:0;margin-bottom:28px;padding:0 4px}
+  .kv-progress-step{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:14px;font-weight:700;background:#e5e5e5;color:#999;flex-shrink:0}
+  .kv-progress-step.active{background:#ff4444;color:#fff}
+  .kv-progress-step.done{background:#22c55e;color:#fff}
+  .kv-progress-line{flex:1;height:3px;background:#e5e5e5}
+  .kv-progress-line.done{background:#22c55e}
+  .kv-progress-line.active{background:#ff4444}
+
+  /* Steps */
+  .kv-step{display:none}
+  .kv-step.active{display:block}
+
+  /* Step labels */
+  .kv-step-label{font-size:14px;font-weight:600;color:#666;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px}
+  .kv-step-hint{font-size:14px;color:#999;margin-bottom:20px}
+
+  /* AC Type Cards */
+  .kv-type-row{display:flex;gap:12px;margin-bottom:24px}
+  .kv-type-card{flex:1;border:2px solid #e5e5e5;border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;background:#fafafa}
+  .kv-type-card.active{border-color:#ff4444;background:#fff5f5}
+  .kv-type-card:hover{border-color:#ff4444}
+  .kv-type-icon{margin-bottom:8px}
+  .kv-type-icon svg{width:56px;height:56px}
+  .kv-type-name{font-size:16px;font-weight:600;color:#090005}
+  .kv-type-cap{font-size:13px;color:#666;margin-top:2px}
+  .kv-type-price{font-size:13px;color:#ff4444;font-weight:600;margin-top:6px}
+
+  /* Month Selector */
+  .kv-month-section{margin-bottom:24px}
+  .kv-month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .kv-month-btn{border:2px solid #e5e5e5;border-radius:10px;padding:14px 0;text-align:center;cursor:pointer;font-size:15px;font-weight:600;background:#fafafa;color:#090005}
+  .kv-month-btn.active{border-color:#ff4444;background:#ff4444;color:#fff}
+  .kv-month-btn:hover{border-color:#ff4444}
+  .kv-month-sub{font-size:11px;font-weight:400;color:#999;margin-top:2px}
+  .kv-month-btn.active .kv-month-sub{color:rgba(255,255,255,0.8)}
+
+  /* Selected summary pill */
+  .kv-selection-pill{display:inline-flex;align-items:center;gap:6px;background:#fff5f5;border:1px solid #ffcdd2;border-radius:20px;padding:6px 14px;font-size:13px;color:#090005;margin-bottom:16px}
+  .kv-selection-pill strong{color:#ff4444}
+
+  /* Section heading inside breakdown */
+  .kv-section-head{font-size:13px;font-weight:700;color:#ff4444;text-transform:uppercase;letter-spacing:0.5px;padding:4px 0 8px;margin-top:4px}
+  .kv-section-head.green{color:#22c55e}
+
+  /* Breakdown Card */
+  .kv-breakdown{background:#fafafa;border:1px solid #e5e5e5;border-radius:12px;padding:20px;margin-bottom:16px}
+  .kv-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px;color:#666}
+  .kv-row span:last-child{font-size:15px;font-weight:600;color:#090005}
+  .kv-row.kv-refundable span:last-child{color:#666}
+  .kv-row.kv-refundable .kv-badge{display:inline-block;font-size:11px;font-weight:600;color:#22c55e;background:#f0fdf4;padding:2px 8px;border-radius:4px;margin-left:6px}
+  .kv-row.kv-free span:last-child{color:#22c55e;font-weight:700}
+  .kv-step.active .kv-row.kv-onetime span:first-child::after{content:"(one-time)";font-size:11px;color:#999;margin-left:4px}
+  .kv-divider{border:none;border-top:1px dashed #e5e5e5;margin:8px 0}
+  .kv-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px}
+  .kv-total-row span:first-child{font-size:15px;font-weight:700;color:#090005}
+  .kv-total-row span:last-child{font-size:22px;font-weight:700;color:#ff4444}
+
+  /* Next month note */
+  .kv-next-month{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:16px}
+  .kv-next-month-head{font-size:13px;font-weight:700;color:#22c55e;margin-bottom:6px}
+  .kv-next-month-body{font-size:14px;color:#090005;line-height:1.5}
+  .kv-next-month-body strong{color:#ff4444}
+
+  /* Grand total card */
+  .kv-grand{background:#fafafa;border:1px solid #e5e5e5;border-radius:12px;padding:18px 20px;margin-bottom:16px;color:#090005}
+  .kv-grand-label{font-size:13px;color:#666;margin-bottom:4px}
+  .kv-grand-amount{font-size:30px;font-weight:700;color:#090005}
+  .kv-grand-sub{font-size:13px;color:#999;margin-top:4px}
+  .kv-grand-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;color:#666;margin-top:8px;border-top:1px dashed #e5e5e5;padding-top:10px}
+  .kv-grand-row span:last-child{color:#090005;font-weight:600}
+
+  /* Note */
+  .kv-note{background:#fff9f0;border:1px solid #ffe0b2;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#555;line-height:1.6}
+  .kv-note strong{color:#090005}
+
+  /* Savings Card */
+  .kv-savings{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:24px}
+  .kv-savings-title{font-size:14px;font-weight:600;color:#090005;margin-bottom:10px}
+  .kv-savings-text{font-size:13px;color:#666;margin-bottom:12px;line-height:1.5}
+  .kv-savings-compare{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:12px}
+  .kv-savings-compare .kv-sc-left{font-size:14px;color:#090005}
+  .kv-savings-compare .kv-sc-left strong{font-size:16px}
+  .kv-savings-compare .kv-sc-right{text-align:right}
+  .kv-savings-compare .kv-sc-save{font-size:14px;font-weight:700;color:#22c55e}
+  .kv-savings-compare .kv-sc-total{font-size:12px;color:#666;margin-top:2px}
+  .kv-savings-switch{display:block;width:100%;margin-top:12px;padding:10px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center}
+  .kv-savings-switch:hover{background:#1eae56}
+
+  /* Navigation Buttons */
+  .kv-nav{display:flex;gap:12px;margin-top:8px}
+  .kv-nav-btn{flex:1;padding:14px 16px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;font-family:inherit}
+  .kv-nav-next{background:#ff4444;color:#fff}
+  .kv-nav-next:hover{background:#e03c3c}
+  .kv-nav-back{background:#fafafa;color:#090005;border:1px solid #e5e5e5}
+  .kv-nav-back:hover{background:#f0f0f0}
+
+  /* CTA Buttons */
+  .kv-cta-row{display:flex;gap:12px;margin-bottom:20px}
+  .kv-btn{flex:1;padding:14px 16px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px}
+  .kv-btn-wa{background:#25d366;color:#fff}
+  .kv-btn-wa:hover{background:#1fb855}
+  .kv-btn-cb{background:#ff4444;color:#fff}
+  .kv-btn-cb:hover{background:#e03c3c}
+  .kv-btn svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
+
+  /* Callback Form */
+  .kv-form-wrap{display:none;background:#fafafa;border:1px solid #e5e5e5;border-radius:12px;padding:20px;margin-bottom:20px}
+  .kv-form-wrap.show{display:block}
+  .kv-form-title{font-size:18px;font-weight:700;margin-bottom:16px;color:#090005}
+  .kv-field{margin-bottom:14px}
+  .kv-field label{display:block;font-size:13px;font-weight:600;color:#666;margin-bottom:4px}
+  .kv-field input{width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:15px;color:#090005;background:#fff;font-family:inherit}
+  .kv-field input:focus{outline:none;border-color:#ff4444}
+  .kv-preview{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:12px;margin-bottom:16px}
+  .kv-preview-title{font-size:13px;font-weight:600;color:#666;margin-bottom:8px}
+  .kv-preview-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
+  .kv-preview-row span:last-child{font-weight:600;color:#090005}
+  .kv-btn-submit{width:100%;padding:14px;background:#ff4444;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+  .kv-btn-submit:hover{background:#e03c3c}
+  .kv-success{display:none;text-align:center;padding:20px}
+  .kv-success.show{display:block}
+  .kv-success p{font-size:16px;font-weight:600;color:#22c55e;margin-bottom:8px}
+  .kv-success span{font-size:14px;color:#666}
+
+  /* Size selector */
+  .kv-size-row{display:flex;gap:8px;margin-bottom:20px}
+  .kv-size-btn{flex:1;padding:10px 8px;border:2px solid #e5e5e5;border-radius:8px;text-align:center;cursor:pointer;font-size:14px;font-weight:600;background:#fafafa;color:#090005}
+  .kv-size-btn.active{border-color:#ff4444;background:#fff5f5;color:#ff4444}
+  .kv-size-btn:hover{border-color:#ff4444}
+  .kv-size-btn .kv-size-tag{font-size:10px;font-weight:600;color:#fff;background:#ff4444;padding:1px 6px;border-radius:3px;margin-top:4px;display:inline-block}
+  .kv-size-btn.quote .kv-size-tag{background:#666}
+
+  /* Quantity selector */
+  .kv-qty-row{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .kv-qty-label{font-size:14px;color:#666}
+  .kv-qty-ctrl{display:flex;align-items:center;gap:0;border:2px solid #e5e5e5;border-radius:10px;overflow:hidden}
+  .kv-qty-btn{width:44px;height:44px;border:none;background:#fafafa;font-size:20px;font-weight:700;cursor:pointer;color:#090005;display:flex;align-items:center;justify-content:center}
+  .kv-qty-btn:hover{background:#f0f0f0}
+  .kv-qty-btn:disabled{color:#ccc;cursor:not-allowed}
+  .kv-qty-val{width:48px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#090005;border-left:1px solid #e5e5e5;border-right:1px solid #e5e5e5}
+
+  /* Responsive */
+  @media(max-width:480px){
+    .kv-calc{padding:16px 12px}
+    .kv-calc h2{font-size:20px}
+    .kv-month-grid{grid-template-columns:repeat(3,1fr)}
+    .kv-grand-amount{font-size:26px}
+    .kv-cta-row{flex-direction:column;gap:10px}
+    .kv-savings-compare{flex-direction:column;gap:8px;text-align:center}
+    .kv-savings-compare .kv-sc-right{text-align:center}
+    .kv-nav{flex-direction:column-reverse;gap:10px}
+  }
+</style>
+</head>
+<body>
+
+<div class="kv-calc" id="kvCalc">
+  <h2>Calculate Your AC Rental</h2>
+
+  <!-- Progress Bar -->
+  <div class="kv-progress" id="progressBar">
+    <div class="kv-progress-step active" data-s="1">1</div>
+    <div class="kv-progress-line" data-l="1"></div>
+    <div class="kv-progress-step" data-s="2">2</div>
+    <div class="kv-progress-line" data-l="2"></div>
+    <div class="kv-progress-step" data-s="3">3</div>
+    <div class="kv-progress-line" data-l="3"></div>
+    <div class="kv-progress-step" data-s="4">4</div>
+  </div>
+
+  <!-- STEP 1: AC Type + Size + Qty -->
+  <div class="kv-step active" id="step1">
+    <div class="kv-step-label">Step 1 of 4</div>
+    <div class="kv-step-hint">What type of AC do you need?</div>
+    <div class="kv-type-row">
+      <div class="kv-type-card active" data-type="split" onclick="selectType('split')">
+        <div class="kv-type-icon"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="10" width="56" height="22" rx="4" stroke="#090005" stroke-width="2.5" fill="#fafafa"/><rect x="8" y="14" width="48" height="6" rx="2" fill="#e5e5e5"/><line x1="8" y1="24" x2="56" y2="24" stroke="#e5e5e5" stroke-width="1.5"/><line x1="8" y1="27" x2="56" y2="27" stroke="#e5e5e5" stroke-width="1"/><circle cx="50" cy="17" r="2" fill="#22c55e"/><path d="M30 32v10M34 32v10" stroke="#999" stroke-width="1.5" stroke-dasharray="2 2"/><rect x="20" y="42" width="24" height="14" rx="3" stroke="#090005" stroke-width="2" fill="#fafafa"/><circle cx="32" cy="49" r="4" stroke="#ff4444" stroke-width="2" fill="none"/></svg></div>
+        <div class="kv-type-name">Split AC</div>
+        <div class="kv-type-price">From &#8377;1,167/mo</div>
+      </div>
+      <div class="kv-type-card" data-type="window" onclick="selectType('window')">
+        <div class="kv-type-icon"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="8" width="52" height="36" rx="4" stroke="#090005" stroke-width="2.5" fill="#fafafa"/><rect x="10" y="12" width="44" height="10" rx="2" fill="#e5e5e5"/><line x1="10" y1="28" x2="54" y2="28" stroke="#e5e5e5" stroke-width="1.5"/><line x1="10" y1="31" x2="54" y2="31" stroke="#e5e5e5" stroke-width="1"/><line x1="10" y1="34" x2="54" y2="34" stroke="#e5e5e5" stroke-width="1"/><circle cx="48" cy="16" r="2" fill="#22c55e"/><rect x="14" y="37" width="8" height="3" rx="1" fill="#ccc"/><rect x="42" y="37" width="8" height="3" rx="1" fill="#ccc"/><path d="M24 44h16" stroke="#999" stroke-width="1.5"/><path d="M28 44v8M36 44v8" stroke="#999" stroke-width="1.5"/></svg></div>
+        <div class="kv-type-name">Window AC</div>
+        <div class="kv-type-price">From &#8377;833/mo</div>
+      </div>
+    </div>
+
+    <div class="kv-step-label">Select Size</div>
+    <div class="kv-size-row" id="sizeRow">
+      <div class="kv-size-btn active" data-size="1" onclick="selectSize('1')">1 Ton<br><span class="kv-size-tag">Calculate Price</span></div>
+      <div class="kv-size-btn quote" data-size="1.5" onclick="selectSize('1.5')">1.5 Ton<br><span class="kv-size-tag">Get Quote</span></div>
+      <div class="kv-size-btn quote" data-size="2" onclick="selectSize('2')">2 Ton<br><span class="kv-size-tag">Get Quote</span></div>
+    </div>
+
+    <div class="kv-step-label">How Many ACs?</div>
+    <div class="kv-qty-row">
+      <div class="kv-qty-ctrl">
+        <button class="kv-qty-btn" onclick="changeQty(-1)" id="qtyMinus" disabled>&#8722;</button>
+        <div class="kv-qty-val" id="qtyVal">1</div>
+        <button class="kv-qty-btn" onclick="changeQty(1)" id="qtyPlus">+</button>
+      </div>
+      <div class="kv-qty-label" id="qtyLabel">1 Split AC</div>
+    </div>
+
+    <div class="kv-nav">
+      <button class="kv-nav-btn kv-nav-next" id="step1Next" onclick="goStep(2)">Next &#8594;</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Duration -->
+  <div class="kv-step" id="step2">
+    <div class="kv-step-label">Step 2 of 4</div>
+    <div class="kv-step-hint">How long do you need the AC?</div>
+    <div class="kv-selection-pill" id="step2Pill"></div>
+    <div class="kv-month-section">
+      <div class="kv-month-grid" id="monthGrid"></div>
+    </div>
+    <div class="kv-nav">
+      <button class="kv-nav-btn kv-nav-back" onclick="goStep(1)">&#8592; Back</button>
+      <button class="kv-nav-btn kv-nav-next" onclick="goStep(3)">See Price Breakdown &#8594;</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Breakdown -->
+  <div class="kv-step" id="step3">
+    <div class="kv-step-label">Step 3 of 4</div>
+    <div class="kv-step-hint">Here's your complete cost breakdown</div>
+    <div class="kv-selection-pill" id="step3Pill"></div>
+
+    <!-- First Month Breakdown -->
+    <div class="kv-breakdown" id="breakdown">
+      <div class="kv-section-head">Pay Today (First Month)</div>
+      <div class="kv-row kv-refundable"><span>Security Deposit</span><span id="dispSecurity"></span></div>
+      <div class="kv-row"><span>1st Month Rent</span><span id="dispMonthly"></span></div>
+      <div class="kv-row kv-onetime" id="installRow"><span>Installation</span><span id="dispInstall"></span></div>
+      <div class="kv-row kv-onetime"><span>Delivery</span><span id="dispDelivery"></span></div>
+      <div class="kv-row"><span>GST (18%)</span><span id="dispGstFirst"></span></div>
+      <hr class="kv-divider">
+      <div class="kv-total-row"><span>Pay Today</span><span id="dispFirstMonth"></span></div>
+    </div>
+
+    <!-- From Next Month -->
+    <div class="kv-next-month" id="nextMonthCard" style="display:none">
+      <div class="kv-next-month-head">From Month 2 Onwards</div>
+      <div class="kv-next-month-body" id="nextMonthBody"></div>
+    </div>
+
+    <!-- Grand Total -->
+    <div class="kv-grand">
+      <div class="kv-grand-label" id="grandLabel">Total Payable for 1 Month</div>
+      <div class="kv-grand-amount" id="grandAmount"></div>
+      <div class="kv-grand-sub" id="grandSub"></div>
+      <div class="kv-grand-row">
+        <span>Security Deposit (Refunded at End)</span>
+        <span id="grandSecurity"></span>
+      </div>
+    </div>
+
+    <!-- Note (Split AC only) -->
+    <div class="kv-note" id="freeNote">
+      <strong>Included Free:</strong><br>
+      3-meter copper pipe free (extra copper pipe &#8377;1,050/mtr)<br>
+      1.5-feet drain pipe free (extra drain pipe &#8377;100/ft)
+    </div>
+
+    <!-- Savings -->
+    <div class="kv-savings" id="savingsCard" style="display:none">
+      <div class="kv-savings-title">The longer you rent, the lower your monthly cost.</div>
+      <div class="kv-savings-text" id="savingsText"></div>
+      <div class="kv-savings-compare">
+        <div class="kv-sc-left">
+          <div id="savingsMonthLabel"></div>
+          <strong id="savingsMonthlyRate"></strong>/mo
+        </div>
+        <div class="kv-sc-right">
+          <div class="kv-sc-save" id="savingsAmount"></div>
+          <div class="kv-sc-total" id="savingsTotalLabel"></div>
+        </div>
+      </div>
+      <button class="kv-savings-switch" id="savingsSwitchBtn" onclick="switchToSuggested()">Switch to 6 Months Plan</button>
+    </div>
+
+    <div class="kv-nav">
+      <button class="kv-nav-btn kv-nav-back" onclick="goStep(2)">&#8592; Change Duration</button>
+      <button class="kv-nav-btn kv-nav-next" onclick="goStep(4)">Book Now &#8594;</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Contact -->
+  <div class="kv-step" id="step4">
+    <div class="kv-step-label">Step 4 of 4</div>
+    <div class="kv-step-hint">How would you like to get in touch?</div>
+    <div class="kv-selection-pill" id="step4Pill"></div>
+
+    <div class="kv-cta-row">
+      <a class="kv-btn kv-btn-wa" id="waBtn" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp Us
+      </a>
+      <button class="kv-btn kv-btn-cb" onclick="toggleForm()">
+        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        Request a Call Back
+      </button>
+    </div>
+
+    <div class="kv-form-wrap" id="formWrap">
+      <div class="kv-form-title">Request a Call Back</div>
+      <form id="cbForm" onsubmit="submitForm(event)">
+        <div class="kv-field">
+          <label for="fname">Name</label>
+          <input type="text" id="fname" placeholder="Your full name" required>
+        </div>
+        <div class="kv-field">
+          <label for="fphone">Phone Number</label>
+          <input type="tel" id="fphone" placeholder="10-digit mobile number" pattern="[6-9][0-9]{9}" maxlength="10" required>
+        </div>
+        <div class="kv-field">
+          <label for="fcity">City</label>
+          <input type="text" id="fcity" placeholder="e.g. Delhi, Noida, Gurgaon" required>
+        </div>
+        <div class="kv-preview">
+          <div class="kv-preview-title">Your Selection</div>
+          <div class="kv-preview-row"><span>AC Type</span><span id="prevType"></span></div>
+          <div class="kv-preview-row" id="prevDurationRow"><span>Duration</span><span id="prevMonths"></span></div>
+          <div class="kv-preview-row" id="prevFirstRow"><span>Pay Today</span><span id="prevFirst"></span></div>
+          <div class="kv-preview-row" id="prevTotalRow"><span>Total Payable</span><span id="prevTotal"></span></div>
+        </div>
+        <button type="submit" class="kv-btn-submit">Submit Request</button>
+      </form>
+      <div class="kv-success" id="successMsg">
+        <p>&#10004; Request Submitted!</p>
+        <span>Our team will call you back shortly.</span>
+      </div>
+    </div>
+
+    <div class="kv-nav" style="margin-top:12px" id="step4Nav">
+      <button class="kv-nav-btn kv-nav-back" id="step4Back" onclick="goStep(3)">&#8592; Back to Pricing</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ── Monthly Rent from CSV (per AC type, per month duration) ── */
+  var MONTHLY_RENT = {
+    split:  [13999, 7000, 4666, 3500, 2800, 2333, 2000, 1750, 1555, 1400, 1273, 1167],
+    window: [ 9999, 5000, 3333, 2500, 2000, 1667, 1428, 1250, 1111, 1000,  909,  833]
+  };
+
+  var FIXED = {
+    split:  { security: 6000, installation: 1499, delivery: 199, gst: 18 },
+    window: { security: 5000, installation: 0,    delivery: 199, gst: 18 }
+  };
+
+  /* ── State ── */
+  var state = { type: 'split', size: '1', qty: 1, months: 1, step: 1 };
+
+  /* ── Helpers ── */
+  function fmt(n) {
+    return '\u20B9' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function calc(type, months) {
+    var f = FIXED[type];
+    var q = state.qty;
+    var monthlyRentPer = MONTHLY_RENT[type][months - 1];
+    var monthlyRent = monthlyRentPer * q;
+    var totalRent = monthlyRent * months;
+
+    /* Per-unit fixed costs × quantity */
+    var security = f.security * q;
+    var installation = f.installation * q;
+    var delivery = f.delivery * q;
+
+    /* First month: rent + installation + delivery + GST on all three */
+    var firstSubtotal = monthlyRent + installation + delivery;
+    var firstGst = Math.round(firstSubtotal * f.gst / 100);
+    var firstMonthTotal = security + firstSubtotal + firstGst;
+
+    /* From month 2: rent + GST on rent only */
+    var recurringGst = Math.round(monthlyRent * f.gst / 100);
+    var recurringMonthly = monthlyRent + recurringGst;
+
+    /* Grand total for full duration */
+    var remainingMonths = months > 1 ? months - 1 : 0;
+    var grandTotal = firstMonthTotal + (recurringMonthly * remainingMonths);
+
+    return {
+      monthlyRent: monthlyRent,
+      monthlyRentPer: monthlyRentPer,
+      totalRent: totalRent,
+      security: security,
+      installation: installation,
+      delivery: delivery,
+      firstGst: firstGst,
+      firstMonthTotal: firstMonthTotal,
+      recurringGst: recurringGst,
+      recurringMonthly: recurringMonthly,
+      remainingMonths: remainingMonths,
+      grandTotal: grandTotal
+    };
+  }
+
+  function typeName() {
+    var t = state.type === 'split' ? 'Split AC' : 'Window AC';
+    var s = state.size + ' Ton';
+    return state.qty > 1 ? state.qty + 'x ' + t + ' (' + s + ')' : t + ' (' + s + ')';
+  }
+
+  var WA_NUMBER = '917678462928';
+
+  /* ── Step Navigation ── */
+  window.goStep = function(n) {
+    state.step = n;
+    for (var i = 1; i <= 4; i++) {
+      var el = document.getElementById('step' + i);
+      if (i === n) el.classList.add('active'); else el.classList.remove('active');
+    }
+    document.querySelectorAll('.kv-progress-step').forEach(function(s) {
+      var si = parseInt(s.getAttribute('data-s'));
+      s.classList.remove('active', 'done');
+      if (si < n) s.classList.add('done');
+      else if (si === n) s.classList.add('active');
+    });
+    document.querySelectorAll('.kv-progress-line').forEach(function(l) {
+      var li = parseInt(l.getAttribute('data-l'));
+      l.classList.remove('active', 'done');
+      if (li < n) l.classList.add('done');
+      else if (li === n) l.classList.add('active');
+    });
+
+    var r = calc(state.type, state.months);
+    var pill = '<strong>' + typeName() + '</strong>';
+    if (state.size !== '1' && n >= 4) {
+      pill += ' &middot; ' + state.size + ' Ton &middot; Get Quote';
+    } else {
+      if (n >= 3) pill += ' &middot; ' + state.months + (state.months === 1 ? ' month' : ' months');
+      if (n >= 4) pill += ' &middot; ' + fmt(r.grandTotal);
+    }
+    if (n >= 2) document.getElementById('step2Pill').innerHTML = pill;
+    if (n >= 3) document.getElementById('step3Pill').innerHTML = pill;
+    if (n >= 4) document.getElementById('step4Pill').innerHTML = pill;
+
+    if (n >= 3) updateBreakdown();
+
+    /* Step 4 back button: go to step 1 if quote flow, step 3 if normal */
+    if (n === 4) {
+      var backBtn = document.getElementById('step4Back');
+      if (state.size !== '1') {
+        backBtn.textContent = '\u2190 Change Selection';
+        backBtn.onclick = function() { goStep(1); };
+      } else {
+        backBtn.textContent = '\u2190 Back to Pricing';
+        backBtn.onclick = function() { goStep(3); };
+      }
+    }
+
+    document.getElementById('kvCalc').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  /* ── Build Month Grid ── */
+  function buildMonthGrid() {
+    var grid = document.getElementById('monthGrid');
+    grid.innerHTML = '';
+    for (var i = 1; i <= 12; i++) {
+      var rent = MONTHLY_RENT[state.type][i - 1];
+      var btn = document.createElement('div');
+      btn.className = 'kv-month-btn' + (i === state.months ? ' active' : '');
+      btn.innerHTML = i + (i === 1 ? ' Month' : ' Months') +
+        '<div class="kv-month-sub">' + fmt(rent) + '/mo</div>';
+      btn.setAttribute('data-m', i);
+      btn.onclick = (function(m) { return function() { selectMonth(m); }; })(i);
+      grid.appendChild(btn);
+    }
+  }
+
+  window.selectType = function(type) {
+    state.type = type;
+    document.querySelectorAll('.kv-type-card').forEach(function(c) {
+      c.classList.toggle('active', c.getAttribute('data-type') === type);
+    });
+    updateQtyLabel();
+    buildMonthGrid();
+  };
+
+  /* ── Select Size ── */
+  window.selectSize = function(size) {
+    state.size = size;
+    document.querySelectorAll('.kv-size-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-size') === size);
+    });
+    var nextBtn = document.getElementById('step1Next');
+    if (size !== '1') {
+      nextBtn.textContent = 'Get Quote \u2192';
+      nextBtn.onclick = function() { goStep(4); };
+    } else {
+      nextBtn.textContent = 'Next \u2192';
+      nextBtn.onclick = function() { goStep(2); };
+    }
+  };
+
+  /* ── Quantity ── */
+  window.changeQty = function(delta) {
+    state.qty = Math.max(1, Math.min(10, state.qty + delta));
+    document.getElementById('qtyVal').textContent = state.qty;
+    document.getElementById('qtyMinus').disabled = state.qty <= 1;
+    document.getElementById('qtyPlus').disabled = state.qty >= 10;
+    updateQtyLabel();
+  };
+
+  function updateQtyLabel() {
+    var t = state.type === 'split' ? 'Split AC' : 'Window AC';
+    document.getElementById('qtyLabel').textContent = state.qty + ' ' + t + (state.qty > 1 ? 's' : '');
+  }
+
+  function selectMonth(m) {
+    state.months = m;
+    document.querySelectorAll('.kv-month-btn').forEach(function(b) {
+      b.classList.toggle('active', parseInt(b.getAttribute('data-m')) === m);
+    });
+  }
+
+  /* ── Update Breakdown (Step 3) ── */
+  function updateBreakdown() {
+    var r = calc(state.type, state.months);
+
+    /* First month card */
+    var secEl = document.getElementById('dispSecurity');
+    var secText = fmt(r.security);
+    if (state.qty > 1) secText += ' (' + state.qty + ' x ' + fmt(r.security / state.qty) + ')';
+    secEl.innerHTML = secText + '<span class="kv-badge">Refundable</span>';
+
+    var rentText = fmt(r.monthlyRent);
+    if (state.qty > 1) rentText += ' (' + state.qty + ' x ' + fmt(r.monthlyRentPer) + ')';
+    document.getElementById('dispMonthly').textContent = rentText;
+
+    var installRow = document.getElementById('installRow');
+    var installEl = document.getElementById('dispInstall');
+    if (state.type === 'window') {
+      installRow.className = 'kv-row kv-free';
+      installEl.textContent = 'Free';
+    } else {
+      installRow.className = 'kv-row kv-onetime';
+      installEl.textContent = fmt(r.installation);
+    }
+
+    document.getElementById('dispDelivery').textContent = fmt(r.delivery);
+    document.getElementById('dispGstFirst').textContent = fmt(r.firstGst);
+    document.getElementById('dispFirstMonth').textContent = fmt(r.firstMonthTotal);
+
+    /* From next month card */
+    var nextCard = document.getElementById('nextMonthCard');
+    if (state.months > 1) {
+      nextCard.style.display = '';
+      document.getElementById('nextMonthBody').innerHTML =
+        'Monthly Rent ' + fmt(r.monthlyRent) + ' + GST ' + fmt(r.recurringGst) +
+        ' = <strong>' + fmt(r.recurringMonthly) + '/month</strong>' +
+        '<br>No installation or delivery charges from month 2.';
+    } else {
+      nextCard.style.display = 'none';
+    }
+
+    /* Grand total card */
+    document.getElementById('grandLabel').textContent =
+      'Total Payable for ' + state.months + (state.months === 1 ? ' Month' : ' Months');
+    document.getElementById('grandAmount').textContent = fmt(r.grandTotal);
+    if (state.months > 1) {
+      document.getElementById('grandSub').textContent =
+        'First month ' + fmt(r.firstMonthTotal) + ' + ' +
+        r.remainingMonths + (r.remainingMonths === 1 ? ' month' : ' months') +
+        ' x ' + fmt(r.recurringMonthly) + '/mo';
+    } else {
+      document.getElementById('grandSub').textContent = 'One-time payment, no recurring charges';
+    }
+    document.getElementById('grandSecurity').textContent = fmt(r.security);
+
+    /* Hide free note for window AC */
+    document.getElementById('freeNote').style.display = state.type === 'window' ? 'none' : '';
+
+    updateSavings(r);
+    updateWhatsApp(r);
+    updatePreview(r);
+  }
+
+  /* ── Savings Upsell ── */
+  function updateSavings(current) {
+    var card = document.getElementById('savingsCard');
+    var compareMonths = 0;
+
+    if (state.months < 3) compareMonths = 6;
+    else if (state.months < 6) compareMonths = 9;
+    else if (state.months < 9) compareMonths = 12;
+    else { card.style.display = 'none'; return; }
+
+    var compare = calc(state.type, compareMonths);
+    var monthlySaving = current.monthlyRent - compare.monthlyRent;
+    var totalSaving = current.grandTotal - compare.grandTotal;
+
+    if (monthlySaving <= 0) { card.style.display = 'none'; return; }
+
+    state._suggestedMonths = compareMonths;
+    card.style.display = '';
+    document.getElementById('savingsText').textContent =
+      'Rent for ' + compareMonths + ' months instead of ' + state.months +
+      '. Pay just ' + fmt(compare.monthlyRent) + '/mo instead of ' + fmt(current.monthlyRent) + '/mo.';
+    document.getElementById('savingsMonthLabel').textContent = compareMonths + ' months plan';
+    document.getElementById('savingsMonthlyRate').textContent = fmt(compare.monthlyRent);
+    document.getElementById('savingsAmount').textContent = 'Save ' + fmt(monthlySaving) + '/mo';
+    document.getElementById('savingsTotalLabel').textContent = 'Total: ' + fmt(compare.grandTotal);
+    document.getElementById('savingsSwitchBtn').textContent = 'Switch to ' + compareMonths + ' Months Plan';
+  }
+
+  window.switchToSuggested = function() {
+    if (!state._suggestedMonths) return;
+    state.months = state._suggestedMonths;
+    document.querySelectorAll('.kv-month-btn').forEach(function(b) {
+      b.classList.toggle('active', parseInt(b.getAttribute('data-m')) === state.months);
+    });
+    updateBreakdown();
+  };
+
+  /* ── WhatsApp Link ── */
+  function updateWhatsApp(r) {
+    var msg = 'Hi, I am interested in renting a ' + typeName() +
+      ' for ' + state.months + (state.months === 1 ? ' month' : ' months') +
+      '. Total payable: ' + fmt(r.grandTotal) +
+      '. Please share more details.';
+    document.getElementById('waBtn').href =
+      'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
+  }
+
+  /* ── Form Preview ── */
+  function updatePreview(r) {
+    document.getElementById('prevType').textContent = typeName();
+    if (state.size !== '1') {
+      document.getElementById('prevDurationRow').style.display = 'none';
+      document.getElementById('prevFirstRow').style.display = 'none';
+      document.getElementById('prevTotalRow').style.display = 'none';
+    } else {
+      document.getElementById('prevDurationRow').style.display = '';
+      document.getElementById('prevFirstRow').style.display = '';
+      document.getElementById('prevTotalRow').style.display = '';
+      document.getElementById('prevMonths').textContent = state.months + (state.months === 1 ? ' month' : ' months');
+      document.getElementById('prevFirst').textContent = fmt(r.firstMonthTotal);
+      document.getElementById('prevTotal').textContent = fmt(r.grandTotal);
+    }
+  }
+
+  window.toggleForm = function() {
+    var wrap = document.getElementById('formWrap');
+    wrap.classList.toggle('show');
+    if (wrap.classList.contains('show')) {
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+
+  window.submitForm = function(e) {
+    e.preventDefault();
+    var name = document.getElementById('fname').value.trim();
+    var phone = document.getElementById('fphone').value.trim();
+    var city = document.getElementById('fcity').value.trim();
+    var r = calc(state.type, state.months);
+
+    var subject = 'AC Rental Callback Request - ' + name;
+    var body = 'Name: ' + name + '\n' +
+      'Phone: ' + phone + '\n' +
+      'City: ' + city + '\n' +
+      'AC Type: ' + typeName() + '\n' +
+      'Duration: ' + state.months + ' months\n' +
+      'Monthly Rent: ' + fmt(r.monthlyRent) + '\n' +
+      'Pay Today (1st Month): ' + fmt(r.firstMonthTotal) + '\n' +
+      'From Month 2: ' + fmt(r.recurringMonthly) + '/mo\n' +
+      'Total Payable: ' + fmt(r.grandTotal) + '\n' +
+      'Security Deposit: ' + fmt(r.security) + ' (Refundable)';
+
+    var mailTo = 'mailto:info@keyvendors.com?subject=' +
+      encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    window.location.href = mailTo;
+
+    document.getElementById('cbForm').style.display = 'none';
+    document.getElementById('successMsg').classList.add('show');
+  };
+
+  /* ── Init ── */
+  buildMonthGrid();
+})();
+</script>
+
+</body>
+</html>

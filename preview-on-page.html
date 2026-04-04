@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview - AC Calculator on KeyVendors Page</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+
+  /* Device Switcher */
+  .switcher { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: #1a1a2e; padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
+  .switcher-label { color: #fff; font-size: 13px; font-weight: 600; }
+  .switcher button { padding: 6px 16px; border: 1px solid #444; border-radius: 6px; background: transparent; color: #ccc; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .switcher button.active { background: #ff4444; color: #fff; border-color: #ff4444; }
+  .switcher .preview-note { margin-left: auto; color: #888; font-size: 12px; }
+
+  /* Frame container */
+  .frame-wrap { display: flex; justify-content: center; padding: 60px 20px 20px; min-height: 100vh; }
+  .device-frame { background: #fff; border-radius: 12px; box-shadow: 0 4px 40px rgba(0,0,0,0.15); overflow: hidden; transition: width 0.3s; }
+  .device-frame.desktop { width: 1200px; }
+  .device-frame.mobile { width: 390px; }
+
+  /* Fake KeyVendors header */
+  .kv-header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .kv-logo { font-size: 20px; font-weight: 800; color: #1a1a2e; }
+  .kv-logo span { color: #ff4444; }
+  .kv-header-btns { display: flex; gap: 8px; }
+  .kv-header-btn { padding: 6px 14px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 12px; color: #666; background: #fff; cursor: default; }
+  .kv-header-btn.red { border-color: #ff4444; color: #ff4444; }
+
+  /* Hero section */
+  .kv-hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 24px; color: #fff; text-align: center; }
+  .kv-hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 12px; line-height: 1.3; }
+  .kv-hero p { font-size: 15px; color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto 20px; }
+  .kv-hero-price { display: inline-block; background: #ff4444; color: #fff; padding: 8px 20px; border-radius: 8px; font-size: 18px; font-weight: 700; }
+
+  /* Product cards placeholder */
+  .kv-products { padding: 30px 24px; background: #f8f8f8; }
+  .kv-products-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
+  .kv-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .kv-product-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; text-align: center; }
+  .kv-product-img { width: 100%; height: 120px; background: #f0f0f0; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .kv-product-name { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 4px; }
+  .kv-product-price { font-size: 16px; font-weight: 700; color: #ff4444; }
+  .kv-product-price s { font-size: 12px; color: #999; font-weight: 400; }
+  .kv-product-btn { margin-top: 10px; padding: 8px 16px; background: #ff4444; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: default; width: 100%; }
+
+  /* Calculator section marker */
+  .calc-section { padding: 20px 24px; background: #fff; }
+  .calc-section-label { text-align: center; font-size: 11px; font-weight: 700; color: #ff4444; text-transform: uppercase; letter-spacing: 2px; padding: 8px; background: #fff5f5; border: 1px dashed #ff4444; border-radius: 8px; margin-bottom: 20px; }
+
+  /* Calculator iframe */
+  .calc-iframe { width: 100%; border: none; min-height: 600px; }
+
+  /* Stay Cool section */
+  .kv-content { padding: 30px 24px; max-width: 800px; margin: 0 auto; }
+  .kv-content h2 { font-size: 22px; font-weight: 700; color: #34495e; margin: 20px 0 12px; padding-left: 10px; border-left: 3px solid #3498db; }
+  .kv-content p { font-size: 15px; color: #555; line-height: 1.7; margin: 12px 0; }
+
+  /* Footer */
+  .kv-footer { background: #1a1a2e; padding: 30px 24px; color: rgba(255,255,255,0.5); font-size: 13px; text-align: center; }
+
+  /* Mobile adjustments */
+  .device-frame.mobile .kv-hero h1 { font-size: 20px; }
+  .device-frame.mobile .kv-hero-price { font-size: 15px; }
+  .device-frame.mobile .kv-product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .device-frame.mobile .kv-product-img { height: 80px; font-size: 28px; }
+  .device-frame.mobile .kv-content h2 { font-size: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Device Switcher -->
+<div class="switcher">
+  <span class="switcher-label">Preview Mode:</span>
+  <button class="active" onclick="setDevice('desktop')">Desktop (1200px)</button>
+  <button onclick="setDevice('mobile')">Mobile (390px)</button>
+  <span class="preview-note">This is a preview mockup of how the calculator will appear on the landing page</span>
+</div>
+
+<div class="frame-wrap">
+  <div class="device-frame desktop" id="deviceFrame">
+
+    <!-- Fake Header -->
+    <div class="kv-header">
+      <div class="kv-logo">Key<span>Vendors</span></div>
+      <div class="kv-header-btns">
+        <div class="kv-header-btn">Search</div>
+        <div class="kv-header-btn">Cart</div>
+        <div class="kv-header-btn red">Get Membership</div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="kv-hero">
+      <h1>Book Affordable AC on Rent in Delhi</h1>
+      <p>Get split and window ACs on rent with free installation, delivery, and maintenance. Starting from just</p>
+      <div class="kv-hero-price">&#8377;999/Month</div>
+    </div>
+
+    <!-- Product Cards -->
+    <div class="kv-products">
+      <div class="kv-products-title">AC on Rent in Delhi Price Monthly and Full Season Plans</div>
+      <div class="kv-product-grid">
+        <div class="kv-product-card">
+          <div class="kv-product-img">&#10052;</div>
+          <div class="kv-product-name">Window AC 1.5 Ton</div>
+          <div class="kv-product-price">&#8377;999/mo <s>&#8377;2,500</s></div>
+          <button class="kv-product-btn">Add to Cart</button>
+        </div>
+        <div class="kv-product-card">
+          <div class="kv-product-img">&#10052;</div>
+          <div class="kv-product-name">Split AC 1 Ton</div>
+          <div class="kv-product-price">&#8377;1,988/mo <s>&#8377;3,500</s></div>
+          <button class="kv-product-btn">Add to Cart</button>
+        </div>
+        <div class="kv-product-card">
+          <div class="kv-product-img">&#10052;</div>
+          <div class="kv-product-name">Split AC 1.5 Ton</div>
+          <div class="kv-product-price">&#8377;2,399/mo <s>&#8377;4,000</s></div>
+          <button class="kv-product-btn">Add to Cart</button>
+        </div>
+        <div class="kv-product-card">
+          <div class="kv-product-img">&#10052;</div>
+          <div class="kv-product-name">Full Season Rental</div>
+          <div class="kv-product-price">&#8377;7,999 <s>&#8377;12,000</s></div>
+          <button class="kv-product-btn">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALCULATOR GOES HERE -->
+    <div class="calc-section">
+      <div class="calc-section-label">&#9660; Calculator will be placed here &#9660;</div>
+      <iframe class="calc-iframe" id="calcFrame" src="ac-rental-calculator.html" scrolling="no"></iframe>
+    </div>
+
+    <!-- Stay Cool Section -->
+    <div class="kv-content">
+      <h2>Stay Cool With AC On Rent in Delhi from &#8377;999/Month</h2>
+      <p>Delhi summers can be brutal, with temperatures soaring above 45 degrees Celsius. Renting an AC is the smartest way to stay cool without the hefty upfront investment of buying one. KeyVendors offers affordable AC rental plans starting from just &#8377;999 per month.</p>
+      <h2>Why Rent an AC Instead of Buying?</h2>
+      <p>Renting gives you flexibility, zero maintenance hassle, and professional installation included. Whether you need it for a few months during summer or a full year, our plans are designed to fit every budget and need.</p>
+      <h2>Types of AC Available on Rent</h2>
+      <p>We offer Window AC (1 Ton, 1.5 Ton) and Split AC (1 Ton, 1.5 Ton, 2 Ton) options. All units are thoroughly serviced and come with a quality guarantee.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="kv-footer">
+      &copy; 2026 KeyVendors. All rights reserved. | This is a preview mockup.
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto-resize iframe to fit calculator content
+  var calcFrame = document.getElementById('calcFrame');
+  function resizeFrame() {
+    try {
+      var h = calcFrame.contentDocument.body.scrollHeight;
+      if (h > 100) calcFrame.style.height = h + 20 + 'px';
+    } catch(e) {}
+  }
+  calcFrame.onload = function() {
+    resizeFrame();
+    // Re-check height periodically (for step changes)
+    setInterval(resizeFrame, 500);
+  };
+
+  // Device switcher
+  function setDevice(mode) {
+    var frame = document.getElementById('deviceFrame');
+    frame.className = 'device-frame ' + mode;
+    document.querySelectorAll('.switcher button').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    setTimeout(resizeFrame, 400);
+  }
+</script>
+
+</body>
+</html>
