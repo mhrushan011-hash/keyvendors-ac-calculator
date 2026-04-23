@@ -35,6 +35,7 @@
   .kv-type-name{font-size:16px;font-weight:600;color:#090005}
   .kv-type-cap{font-size:13px;color:#666;margin-top:2px}
   .kv-type-price{font-size:13px;color:#ff4444;font-weight:600;margin-top:6px}
+  .kv-type-note{font-size:11px;color:#999;margin-top:2px}
 
   /* Month Selector */
   .kv-month-section{margin-bottom:24px}
@@ -73,12 +74,12 @@
   .kv-next-month-body strong{color:#ff4444}
 
   /* Grand total card */
-  .kv-grand{background:#090005;border-radius:12px;padding:18px 20px;margin-bottom:16px;color:#fff}
-  .kv-grand-label{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:4px}
-  .kv-grand-amount{font-size:30px;font-weight:700;color:#fff}
-  .kv-grand-sub{font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px}
-  .kv-grand-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;color:rgba(255,255,255,0.6);margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:10px}
-  .kv-grand-row span:last-child{color:#fff;font-weight:600}
+  .kv-grand{background:#fafafa;border:1px solid #e5e5e5;border-radius:12px;padding:18px 20px;margin-bottom:16px;color:#090005}
+  .kv-grand-label{font-size:13px;color:#666;margin-bottom:4px}
+  .kv-grand-amount{font-size:30px;font-weight:700;color:#ff4444}
+  .kv-grand-sub{font-size:13px;color:#999;margin-top:4px}
+  .kv-grand-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;color:#666;margin-top:8px;border-top:1px solid #e5e5e5;padding-top:10px}
+  .kv-grand-row span:last-child{color:#090005;font-weight:600}
 
   /* Note */
   .kv-note{background:#fff9f0;border:1px solid #ffe0b2;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#555;line-height:1.6}
@@ -88,7 +89,8 @@
   .kv-savings{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:24px}
   .kv-savings-title{font-size:14px;font-weight:600;color:#090005;margin-bottom:10px}
   .kv-savings-text{font-size:13px;color:#666;margin-bottom:12px;line-height:1.5}
-  .kv-savings-compare{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:12px}
+  .kv-savings-compare{display:flex;justify-content:space-between;align-items:center;background:#fff;border:2px solid #e5e5e5;border-radius:8px;padding:12px;cursor:pointer;transition:border-color .15s,background .15s}
+  .kv-savings-compare:hover{border-color:#22c55e;background:#f0fdf4}
   .kv-savings-compare .kv-sc-left{font-size:14px;color:#090005}
   .kv-savings-compare .kv-sc-left strong{font-size:16px}
   .kv-savings-compare .kv-sc-right{text-align:right}
@@ -186,11 +188,13 @@
         <div class="kv-type-icon">&#10052;</div>
         <div class="kv-type-name">Split AC</div>
         <div class="kv-type-price">From &#8377;1,167/mo</div>
+        <div class="kv-type-note">(12 month plan)</div>
       </div>
       <div class="kv-type-card" data-type="window" onclick="selectType('window')">
         <div class="kv-type-icon">&#9744;</div>
         <div class="kv-type-name">Window AC</div>
         <div class="kv-type-price">From &#8377;833/mo</div>
+        <div class="kv-type-note">(12 month plan)</div>
       </div>
     </div>
 
@@ -266,7 +270,7 @@
     </div>
 
     <!-- Note -->
-    <div class="kv-note">
+    <div class="kv-note" id="kvNote">
       <strong>Included Free:</strong><br>
       3-meter copper pipe free (extra copper pipe &#8377;1,050/mtr)<br>
       1.5-feet drain pipe free (extra drain pipe &#8377;100/ft)
@@ -276,7 +280,7 @@
     <div class="kv-savings" id="savingsCard" style="display:none">
       <div class="kv-savings-title">The longer you rent, the lower your monthly cost.</div>
       <div class="kv-savings-text" id="savingsText"></div>
-      <div class="kv-savings-compare">
+      <div class="kv-savings-compare" id="savingsCompare">
         <div class="kv-sc-left">
           <div id="savingsMonthLabel"></div>
           <strong id="savingsMonthlyRate"></strong>/mo
@@ -285,6 +289,7 @@
           <div class="kv-sc-save" id="savingsAmount"></div>
           <div class="kv-sc-total" id="savingsTotalLabel"></div>
         </div>
+        <div style="font-size:12px;color:#22c55e;font-weight:700;margin-left:10px;white-space:nowrap">Select &#8594;</div>
       </div>
     </div>
 
@@ -458,7 +463,7 @@
     var grid = document.getElementById('monthGrid');
     grid.innerHTML = '';
     for (var i = 1; i <= 12; i++) {
-      var rent = MONTHLY_RENT[state.type][i - 1];
+      var rent = MONTHLY_RENT[state.type][i - 1] * state.qty;
       var btn = document.createElement('div');
       btn.className = 'kv-month-btn' + (i === state.months ? ' active' : '');
       btn.innerHTML = i + (i === 1 ? ' Month' : ' Months') +
@@ -501,6 +506,7 @@
     document.getElementById('qtyMinus').disabled = state.qty <= 1;
     document.getElementById('qtyPlus').disabled = state.qty >= 10;
     updateQtyLabel();
+    buildMonthGrid();
   };
 
   function updateQtyLabel() {
@@ -540,6 +546,7 @@
     }
 
     document.getElementById('dispDelivery').textContent = fmt(r.delivery);
+    document.getElementById('kvNote').style.display = state.type === 'split' ? '' : 'none';
     document.getElementById('dispGstFirst').textContent = fmt(r.firstGst);
     document.getElementById('dispFirstMonth').textContent = fmt(r.firstMonthTotal);
 
@@ -598,6 +605,8 @@
     document.getElementById('savingsMonthlyRate').textContent = fmt(compare.monthlyRent);
     document.getElementById('savingsAmount').textContent = 'Save ' + fmt(monthlySaving) + '/mo';
     document.getElementById('savingsTotalLabel').textContent = 'Total: ' + fmt(compare.grandTotal);
+    var cmp = document.getElementById('savingsCompare');
+    cmp.onclick = (function(m) { return function() { selectMonth(m); updateBreakdown(); }; })(compareMonths);
   }
 
   /* ── WhatsApp Link ── */
